@@ -38,8 +38,96 @@ function dlog(message: string) {
 // Ensure database state fits what represents
 dlog("Initializing database service...");
 
-// --- EMAIL DISPATCH SYSTEM (REAL SMTP ONLY — no code is ever returned to the client) ---
-async function sendMailHelper(to: string, subject: string, textContent: string, htmlContent: string, code: string) {
+// --- EMAIL DISPATCH SYSTEM (REAL delivery ONLY — no code is ever returned to the client) ---
+// Splits "Name <email@domain.com>" into parts for Brevo's sender object; falls back
+// to treating the whole string as the email if there's no "Name <...>" wrapping.
+function parseFromAddress(from: string): { name: string; email: string } {
+  const match = from.match(/^(.*?)\s*<(.+)>$/);
+  if (match) {
+    return { name: match[1].trim().replace(/^"|"$/g, '') || 'QA Interview Kit', email: match[2].trim() };
+  }
+  return { name: 'QA Interview Kit', email: from.trim() };
+}
+
+// Brevo's HTTP API (api-key auth) — used when BREVO_API_KEY is set. Unlike SMTP AUTH,
+// it isn't blocked by Brevo's IP-anti-abuse system, so it works from hosts with shared/
+// dynamic outbound IPs (e.g. Render's free tier) where SMTP login gets rejected.
+async function sendViaBrevoApi(to: string, subject: string, textContent: string, htmlContent: string): Promise<boolean> {
+  const apiKey = process.env.BREVO_API_KEY!;
+  const from = process.env.SMTP_FROM || 'QA Interview Kit <no-reply@qakit.com>';
+  const sender = parseFromAddress(from);
+
+  try {
+    dlog(`Dispatching mail to ${to} via Brevo HTTP API...`);
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        sender,
+        to: [{ email: to }],
+        subject,
+        textContent,
+        htmlContent
+      })
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      console.error(`Brevo API failed to dispatch mail to ${to}: ${res.status} ${errBody}`);
+      return false;
+    }
+    dlog(`Email dispatched successfully to ${to} (via Brevo API)`);
+    return true;
+  } catch (apiErr) {
+    console.error(`Brevo API request failed for ${to}:`, apiErr);
+    return false;
+  }
+}
+
+// SendGrid's HTTP API (api-key auth) — no IP-allowlist restriction at all, unlike Brevo.
+// Used when SENDGRID_API_KEY is set; takes priority over Brevo/SMTP.
+async function sendViaSendGrid(to: string, subject: string, textContent: string, htmlContent: string): Promise<boolean> {
+  const apiKey = process.env.SENDGRID_API_KEY!;
+  const from = process.env.SMTP_FROM || 'QA Interview Kit <no-reply@qakit.com>';
+  const sender = parseFromAddress(from);
+
+  try {
+    dlog(`Dispatching mail to ${to} via SendGrid HTTP API...`);
+    const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: to }] }],
+        from: { email: sender.email, name: sender.name },
+        subject,
+        content: [
+          { type: 'text/plain', value: textContent },
+          { type: 'text/html', value: htmlContent }
+        ]
+      })
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      console.error(`SendGrid API failed to dispatch mail to ${to}: ${res.status} ${errBody}`);
+      return false;
+    }
+    dlog(`Email dispatched successfully to ${to} (via SendGrid API)`);
+    return true;
+  } catch (apiErr) {
+    console.error(`SendGrid API request failed for ${to}:`, apiErr);
+    return false;
+  }
+}
+
+async function sendViaSmtp(to: string, subject: string, textContent: string, htmlContent: string): Promise<boolean> {
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT || '587');
   const user = process.env.SMTP_USER;
@@ -76,6 +164,17 @@ async function sendMailHelper(to: string, subject: string, textContent: string, 
     console.error(`Nodemailer failed to dispatch mail to ${to}:`, smtpErr);
     return false;
   }
+}
+
+// Tries SendGrid first (no IP-allowlist restriction), then Brevo's API, then raw SMTP.
+async function sendMailHelper(to: string, subject: string, textContent: string, htmlContent: string, code: string) {
+  if (process.env.SENDGRID_API_KEY) {
+    return sendViaSendGrid(to, subject, textContent, htmlContent);
+  }
+  if (process.env.BREVO_API_KEY) {
+    return sendViaBrevoApi(to, subject, textContent, htmlContent);
+  }
+  return sendViaSmtp(to, subject, textContent, htmlContent);
 }
 
 async function sendVerificationEmail(toEmail: string, code: string, name: string) {
