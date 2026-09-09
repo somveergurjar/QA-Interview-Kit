@@ -1,0 +1,6 @@
+{
+  "name": "QA Interview Kit",
+  "description": "Premium QA Interview Kit Selling Platform with Manual Testing, API, Playwright, Selenium notes, mock cases, templates, secure admin portal, and payment checkout.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

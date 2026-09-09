@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Runtime JSON database and its backups — never commit live production data,
+# and never let a deploy (git pull / clone) overwrite the live DB on the server.
+qa_interview_kit_db.json
+backups/
