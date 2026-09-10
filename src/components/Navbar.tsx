@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PageRoute, User } from '../types.js';
 import { Menu, X, Sun, Moon, LogIn, Command, LayoutDashboard, LogOut, ShieldCheck, FileText, UserCog, Loader2, Eye, EyeOff, Save } from 'lucide-react';
 
@@ -66,6 +67,7 @@ export default function Navbar({ currentRoute, user, token, onLogout, onProfileU
   ];
 
   return (
+    <>
     <nav className={`sticky top-0 z-50 border-b transition-colors duration-300 backdrop-blur-md ${
       darkMode ? 'bg-slate-900/90 border-slate-850 text-gray-100' : 'bg-white/90 border-slate-200 text-gray-800'
     }`}>
@@ -291,8 +293,13 @@ export default function Navbar({ currentRoute, user, token, onLogout, onProfileU
         </div>
       )}
 
-      {/* Admin Profile quick-edit modal */}
-      {profileModalOpen && user && (
+    </nav>
+
+      {/* Admin Profile quick-edit modal — rendered via portal to document.body so
+          it isn't confined by the navbar's backdrop-blur (which creates a new
+          containing block for position:fixed descendants, breaking full-viewport
+          centering and clipping the modal near the top). */}
+      {profileModalOpen && user && createPortal(
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn"
           onClick={() => setProfileModalOpen(false)}
@@ -398,8 +405,9 @@ export default function Navbar({ currentRoute, user, token, onLogout, onProfileU
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </nav>
+    </>
   );
 }
