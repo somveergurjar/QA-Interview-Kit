@@ -38,19 +38,28 @@ function sendTrack(path: string, durationSeconds: number, token: string | null) 
 
 // Silently pings the backend as visitors move between pages, so the admin panel can
 // report how many people visit and how long they actually spend on each page.
-export function useVisitTracking(path: string, token: string | null) {
+// The admin's own browsing is never tracked — isAdmin skips it entirely, so testing/using
+// the site as admin never skews the visitor analytics the admin panel then reports on.
+export function useVisitTracking(path: string, token: string | null, isAdmin: boolean) {
   const enteredAtRef = useRef<number>(Date.now());
   const pathRef = useRef(path);
   const tokenRef = useRef(token);
+  const isAdminRef = useRef(isAdmin);
 
   useEffect(() => {
     tokenRef.current = token;
   }, [token]);
 
   useEffect(() => {
+    isAdminRef.current = isAdmin;
+  }, [isAdmin]);
+
+  useEffect(() => {
     const now = Date.now();
     const durationSeconds = Math.round((now - enteredAtRef.current) / 1000);
-    sendTrack(pathRef.current, durationSeconds, tokenRef.current);
+    if (!isAdminRef.current) {
+      sendTrack(pathRef.current, durationSeconds, tokenRef.current);
+    }
     pathRef.current = path;
     enteredAtRef.current = now;
   }, [path]);
@@ -58,7 +67,9 @@ export function useVisitTracking(path: string, token: string | null) {
   useEffect(() => {
     const flush = () => {
       const durationSeconds = Math.round((Date.now() - enteredAtRef.current) / 1000);
-      sendTrack(pathRef.current, durationSeconds, tokenRef.current);
+      if (!isAdminRef.current) {
+        sendTrack(pathRef.current, durationSeconds, tokenRef.current);
+      }
       enteredAtRef.current = Date.now();
     };
     const handleVisibility = () => {

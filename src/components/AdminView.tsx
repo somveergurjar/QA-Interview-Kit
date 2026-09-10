@@ -137,6 +137,22 @@ export default function AdminView({ token, darkMode }: AdminViewProps) {
     refreshAdminData();
   }, [token]);
 
+  // Lightweight refresh for just the Visitor Insights tab — avoids re-fetching (and
+  // potentially resetting mid-edit form state in) every other tab every 20s.
+  const refreshVisitorAnalytics = () => {
+    fetch('/api/admin/analytics/visitors', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => setVisitorAnalytics(data))
+      .catch(err => console.error('Error refreshing visitor analytics:', err));
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'visitors') return;
+    const interval = setInterval(refreshVisitorAnalytics, 20000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, token]);
+
   const clearNotification = () => {
     setTimeout(() => {
       setSuccessMsg('');
@@ -674,6 +690,18 @@ export default function AdminView({ token, darkMode }: AdminViewProps) {
               {/* --- VISITOR INSIGHTS (traffic + time spent) --- */}
               {activeTab === 'visitors' && visitorAnalytics && (
                 <div className="space-y-6">
+                  <div className="flex items-center justify-between -mb-2">
+                    <span className="text-[10px] font-mono text-gray-400 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live — auto-refreshes every 20s
+                    </span>
+                    <button
+                      onClick={refreshVisitorAnalytics}
+                      className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Refresh now
+                    </button>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-1 ${cardClass}`}>
                       <Eye className="w-8 h-8 text-indigo-500 mb-3" />

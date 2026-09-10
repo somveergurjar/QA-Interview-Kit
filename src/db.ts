@@ -329,7 +329,7 @@ const initialDatabase: DatabaseSchema = {
       { id: "live_interviews", title: "1-on-1 Live Mock Practice", category: "Career", description: "Get 3 live, face-to-face virtual 1-on-1 mock interviews (60 mins each) with principal QA/SDET architects. Gain actionable scorecards, live coding critique, and direct resume review." }
     ],
     contact: {
-      support_email: "support@qakit.com",
+      support_email: "somveerbusiness25@gmail.com",
       phone: "",
       address: "",
       website: "https://qakit.com"

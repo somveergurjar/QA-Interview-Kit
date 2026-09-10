@@ -1936,8 +1936,13 @@ app.post('/api/analytics/track', (req: AuthenticatedRequest, res) => {
 });
 
 app.get('/api/admin/analytics/visitors', authenticateJWT, adminOnly, (req, res) => {
-  const views = dbService.getPageViews();
   const users = dbService.getUsers();
+  const adminUserIds = new Set(users.filter(u => u.is_admin).map(u => u.id));
+
+  // Exclude the admin's own visits from every stat below — both belt (the client never
+  // sends them, see useVisitTracking's isAdmin flag) and suspenders (filtered again here
+  // so any already-recorded admin traffic, e.g. from before that fix, doesn't skew reports).
+  const views = dbService.getPageViews().filter(v => !v.user_id || !adminUserIds.has(v.user_id));
 
   const uniqueSessions = new Set(views.map(v => v.session_id));
   const withDuration = views.filter(v => v.duration_seconds > 0);

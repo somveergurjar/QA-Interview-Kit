@@ -24,6 +24,10 @@ export default function ScrollReveal({ children, variant = 'zoom-in', className 
       return;
     }
 
+    // threshold: 0 (not a percentage of the element's area — large sections like the
+    // comparison table can be several viewport-heights tall on mobile, so a percentage
+    // threshold could stay unmet for many scrolls, leaving content invisible) — trigger
+    // the instant any pixel enters the viewport instead.
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -33,7 +37,7 @@ export default function ScrollReveal({ children, variant = 'zoom-in', className 
           }
         });
       },
-      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }
+      { threshold: 0, rootMargin: '0px 0px -40px 0px' }
     );
     observer.observe(el);
     return () => observer.disconnect();

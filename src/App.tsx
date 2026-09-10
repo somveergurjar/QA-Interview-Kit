@@ -34,7 +34,10 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('qa_kit_token'));
 
-  useVisitTracking(currentRoute, token);
+  // Same race-condition-safe admin check used elsewhere: right after login `user` can
+  // still be null for a moment, so fall back to the localStorage flag set at login time.
+  const isAdminUser = user ? user.is_admin : localStorage.getItem('qa_kit_is_admin') === 'true';
+  useVisitTracking(currentRoute, token, isAdminUser);
 
   // Keep the browser tab label in sync with the current page — admin sees
   // "Admin Panel | QA Interview Kit", every public page gets its own clear label.
