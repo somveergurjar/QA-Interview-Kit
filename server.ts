@@ -1985,6 +1985,11 @@ app.get('/api/admin/analytics/visitors', authenticateJWT, adminOnly, (req, res) 
   });
   const dailyVisits = Array.from(dailyMap.entries()).map(([date, count]) => ({ date, count }));
 
+  const todayKey = today.toISOString().split('T')[0];
+  const todayViews = views.filter(v => v.started_at.split('T')[0] === todayKey);
+  const todayVisits = todayViews.length;
+  const todayUniqueVisitors = new Set(todayViews.map(v => v.session_id)).size;
+
   const recentVisits = views.slice(-30).reverse().map(v => ({
     id: v.id,
     path: v.path,
@@ -1997,6 +2002,8 @@ app.get('/api/admin/analytics/visitors', authenticateJWT, adminOnly, (req, res) 
     totalVisits: views.length,
     uniqueVisitors: uniqueSessions.size,
     avgDurationSeconds,
+    todayVisits,
+    todayUniqueVisitors,
     topPages,
     dailyVisits,
     recentVisits

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Users, DollarSign, Download, Settings, CheckSquare,
   Trash2, RefreshCw, BarChart, ShieldAlert, CheckCircle, BookOpen, Loader2, Star,
-  QrCode, Upload, XCircle, Home, Plus, Pencil, X, Save, Mail, ImageOff, Eye, Clock
+  QrCode, Upload, XCircle, Home, Plus, Pencil, X, Save, Mail, ImageOff, Eye, Clock, CalendarDays
 } from 'lucide-react';
 import { User, Order, Testimonial, PaymentClaim, SiteContent, FaqItem, PersonaCard, ToolkitItemContent, ContactInfo } from '../types.js';
 
@@ -24,6 +24,8 @@ interface VisitorAnalytics {
   totalVisits: number;
   uniqueVisitors: number;
   avgDurationSeconds: number;
+  todayVisits: number;
+  todayUniqueVisitors: number;
   topPages: { path: string; visits: number; avgDurationSeconds: number }[];
   dailyVisits: { date: string; count: number }[];
   recentVisits: { id: number; path: string; duration_seconds: number; started_at: string; user: string }[];
@@ -702,18 +704,24 @@ export default function AdminView({ token, darkMode }: AdminViewProps) {
                       <RefreshCw className="w-3 h-3" /> Refresh now
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-1 ${cardClass}`}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-1 ring-1 ring-rose-500/20 ${cardClass}`}>
+                      <CalendarDays className="w-8 h-8 text-rose-500 mb-3" />
+                      <h4 className="text-2xl font-black">{visitorAnalytics.todayVisits}</h4>
+                      <p className="text-[11px] font-mono text-gray-400 uppercase tracking-widest mt-1">Today's Visits</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{visitorAnalytics.todayUniqueVisitors} unique today</p>
+                    </div>
+                    <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-2 ${cardClass}`}>
                       <Eye className="w-8 h-8 text-indigo-500 mb-3" />
                       <h4 className="text-2xl font-black">{visitorAnalytics.totalVisits}</h4>
                       <p className="text-[11px] font-mono text-gray-400 uppercase tracking-widest mt-1">Total Page Visits</p>
                     </div>
-                    <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-2 ${cardClass}`}>
+                    <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-3 ${cardClass}`}>
                       <Users className="w-8 h-8 text-emerald-500 mb-3" />
                       <h4 className="text-2xl font-black">{visitorAnalytics.uniqueVisitors}</h4>
                       <p className="text-[11px] font-mono text-gray-400 uppercase tracking-widest mt-1">Unique Visitors</p>
                     </div>
-                    <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-3 ${cardClass}`}>
+                    <div className={`p-5 rounded-2xl border card-modern hover:shadow-lg animate-fadeInUp stagger-4 ${cardClass}`}>
                       <Clock className="w-8 h-8 text-amber-500 mb-3" />
                       <h4 className="text-2xl font-black">{formatDuration(visitorAnalytics.avgDurationSeconds)}</h4>
                       <p className="text-[11px] font-mono text-gray-400 uppercase tracking-widest mt-1">Avg. Time Spent</p>
